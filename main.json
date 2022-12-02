@@ -1,1 +1,358 @@
-[{"id":"620af8bdfa4fb220","type":"tab","label":"Flow 1","disabled":false,"info":"","env":[]},{"id":"d2b7852a.b05618","type":"exec","z":"620af8bdfa4fb220","command":"sudo curl -F \"upload=@/home/pi/Pictures/demo.jpg\" -F regions=ca-on -H \"Authorization: Token f810b687bf29403c17daca673188be26f4ea1fd9\"  https://api.platerecognizer.com/v1/plate-reader/","addpay":false,"append":"","useSpawn":"false","timer":"","winHide":false,"oldrc":false,"name":"cURL POST","x":830,"y":280,"wires":[["1ffd9483.014b3b"],[],[]]},{"id":"1ffd9483.014b3b","type":"json","z":"620af8bdfa4fb220","name":"JSON","pretty":false,"x":981.5,"y":295.5,"wires":[["5f3c3d58.fd75e4","9753406b.6d08e"]]},{"id":"9753406b.6d08e","type":"function","z":"620af8bdfa4fb220","name":"Identify Car","func":"var carPlate = \"acpt801\";\n\n//No car or car plate found in photo\nif(msg.payload.results.length === 0) {\n    msg.payload=0;\n    global.set(\"garageOpen\",\"1\");  \n}\n//If car plate and car model match\nelse if(msg.payload.results[0].plate==carPlate) {\n    msg.payload=1;\n    global.set(\"garageOpen\",\"0\");  \n}\n//If car plate and car model don't match\nelse {\n    msg.payload=0;   \n    global.set(\"garageOpen\",\"1\");  \n}\n\nreturn msg;\n\n","outputs":1,"noerr":0,"initialize":"","finalize":"","libs":[],"x":391,"y":484.5,"wires":[["8b530f08.a5dbf"]]},{"id":"3630c78a.035728","type":"camerapi-takephoto","z":"620af8bdfa4fb220","filemode":"1","filename":"demo.jpg","filedefpath":"0","filepath":"/home/pi/Pictures/","fileformat":"jpeg","resolution":"3","rotation":"0","fliph":"0","flipv":"0","brightness":"50","contrast":"0","sharpness":"0","quality":"","imageeffect":"none","agcwait":"","led":"1","name":"Take Photo","x":664,"y":281,"wires":[["d2b7852a.b05618","e55bff3edf46a5f8"]]},{"id":"8b530f08.a5dbf","type":"switch","z":"620af8bdfa4fb220","name":"","property":"payload","propertyType":"msg","rules":[{"t":"eq","v":"1","vt":"str"},{"t":"eq","v":"0","vt":"str"}],"checkall":"true","outputs":2,"x":531.5,"y":483,"wires":[["8fe08deb.7255e","abfb1c60806d1f1c"],["bdbcdcb4133cbf82"]]},{"id":"5f3c3d58.fd75e4","type":"debug","z":"620af8bdfa4fb220","name":"","active":true,"console":"false","complete":"false","x":1130,"y":220,"wires":[]},{"id":"73147f6a.0129e","type":"switch","z":"620af8bdfa4fb220","name":"","property":"payload","propertyType":"msg","rules":[{"t":"eq","v":"0","vt":"str"},{"t":"eq","v":"1","vt":"str"}],"checkall":"true","outputs":2,"x":517,"y":322,"wires":[["3630c78a.035728"],["691d92c5.692d5c"]]},{"id":"af21a185.21cd4","type":"function","z":"620af8bdfa4fb220","name":"Is Garage Open","func":"var garageOpen = global.get(\"garageOpen\"); \n\nif(garageOpen == \"1\"){\n    msg.payload = 1;\n}\nelse {\n    msg.payload = 0;\n}\n\nreturn msg;","outputs":1,"noerr":0,"x":360.5,"y":322,"wires":[["73147f6a.0129e"]]},{"id":"c2bbe2ac.f26ea","type":"rpi-gpio out","z":"620af8bdfa4fb220","name":"GPIO17","pin":"17","set":true,"level":"0","freq":"","out":"out","bcm":true,"x":1120,"y":380,"wires":[]},{"id":"8fe08deb.7255e","type":"delay","z":"620af8bdfa4fb220","name":"","pauseType":"delay","timeout":"10","timeoutUnits":"seconds","rate":"1","nbRateUnits":"1","rateUnits":"second","randomFirst":"1","randomLast":"5","randomUnits":"seconds","drop":false,"outputs":1,"x":709,"y":491,"wires":[["f2cc1ee4.e9841"]]},{"id":"f2cc1ee4.e9841","type":"function","z":"620af8bdfa4fb220","name":"Close Garage","func":"msg.payload=0;   \nglobal.set(\"garageOpen\",\"1\"); \nreturn msg;\n\n","outputs":1,"noerr":0,"initialize":"","finalize":"","libs":[],"x":869,"y":491,"wires":[["c2bbe2ac.f26ea"]]},{"id":"691d92c5.692d5c","type":"debug","z":"620af8bdfa4fb220","name":"","active":true,"console":"false","complete":"false","x":657,"y":329,"wires":[]},{"id":"491dea2b.a14d54","type":"debug","z":"620af8bdfa4fb220","name":"","active":true,"console":"false","complete":"false","x":810,"y":580,"wires":[]},{"id":"bdbcdcb4133cbf82","type":"exec","z":"620af8bdfa4fb220","command":"sudo curl --request POST \\   --url 'https://platform.devtest.ringcentral.com/restapi/v1.0/account/~/extension/~/sms' \\   --header 'accept: application/json' \\   --header 'authorization: Bearer U0pDMTFQMDFQQVMwMHxBQUNkcG02S2dlTDRTRVdFaXViTGhpcXBabHRJNjh0UllwYTRsT1hnSVpXYmVvX0c3V3RORU9Sa3IxLTZjR1IyaU45bjhNdURLMmZQMkdTLXUtaDFyTmItVmN0d0JNbzJIUEItVVdWbnFFVXFrdXJncEZZYVBfQW1xeUVCNWNIdEtsME9BZmR4TFlHdHBxM1BrYlRiOXl1dV9vZDEtWHpGd3ZPdkhybU1wcDBtQk9CVnVwYWRNcUJhaU9uYXVDZFpaanpuNDhveXU5S19HSmgycUNCaHJFVkJIVHdiWkY0R0tVM2pJRVJCTkJYbnlxWUpKNS1uVXlieEI5S3dRTmZoMGhBcTdERXw3ODVNbmd8QkxfVm1nbGp5dkF6NGQtM3lkclZPQXxBUXxBQXxBQUFBQUtCdjB5OA' \\   --header 'content-type: application/json' \\   --data '{\"from\":{\"phoneNumber\":\"+18582571566\"},\"to\":[{\"phoneNumber\":\"16477041074\"}],\"text\":\"An Unkown Vehicle has arrived Please check on these website :- https://testing.dynalias.com\"}'","addpay":"","append":"","useSpawn":"false","timer":"","winHide":true,"oldrc":false,"name":"test","x":630,"y":560,"wires":[["491dea2b.a14d54"],[],[]]},{"id":"683429419965ed88","type":"inject","z":"620af8bdfa4fb220","name":"","props":[{"p":"payload"},{"p":"topic","vt":"str"}],"repeat":"","crontab":"","once":false,"onceDelay":0.1,"topic":"","payload":"","payloadType":"date","x":160,"y":320,"wires":[["af21a185.21cd4"]]},{"id":"e55bff3edf46a5f8","type":"exec","z":"620af8bdfa4fb220","command":"sudo cp /home/pi/Pictures/demo.jpg /var/www/html/demo.jpg","addpay":"","append":"","useSpawn":"false","timer":"","winHide":false,"oldrc":false,"name":"copy","x":830,"y":180,"wires":[["5f3c3d58.fd75e4"],[],[]]},{"id":"abfb1c60806d1f1c","type":"exec","z":"620af8bdfa4fb220","command":"sudo curl --request POST \\   --url 'https://platform.devtest.ringcentral.com/restapi/v1.0/account/~/extension/~/sms' \\   --header 'accept: application/json' \\   --header 'authorization: Bearer U0pDMTFQMDFQQVMwMHxBQUFtT0hyU0VmUGJFMWs0dktGM0c3RmRMc2RtTFJ0UXNBSC10eHhWbENkVllnSTNyd3ZsV0V4NHVpem9QV3B1NWZkYmtoMTF5aEUydlFZdlNwcGd2RHNVX3JDVi1PYlMyTTZHcjVSM0JwNFFoN2dUc3Z5Q0hHc1AxM1NOZlBUY0pXaW9DZEtMdTQtWEJ6bFNvMnFXNDJ0VElIRXRHdUltS0ZsMTdrdDhLVmxhX3pvVU90M3pBaFVpNzl2cG45cTdTTnJoNDRFTEpmZWVZMFktUGNDSlZqTlZuMHZsODdFdW5QR1ZxMGhHMmNRanYxVUljYTVfUjhlVG9iTFpxbUQxU2Z6RVM1QXw3ODVNbmd8RWtmS2d1UFhZYnZVUmRvc3BGbjh4Z3xBUXxBQXxBQUFBQUVGREtITQ' \\   --header 'content-type: application/json' \\   --data '{\"from\":{\"phoneNumber\":\"+18582571566\"},\"to\":[{\"phoneNumber\":\"16477041074\"}],\"text\":\"Your personal vehicle has arrived\"}'","addpay":"","append":"","useSpawn":"false","timer":"","winHide":true,"oldrc":false,"name":"test","x":870,"y":420,"wires":[["c2bbe2ac.f26ea"],[],[]]}]
+[
+    {
+        "id": "620af8bdfa4fb220",
+        "type": "tab",
+        "label": "SGS",
+        "disabled": false,
+        "info": "",
+        "env": []
+    },
+    {
+        "id": "d2b7852a.b05618",
+        "type": "exec",
+        "z": "620af8bdfa4fb220",
+        "command": "sudo curl -F \"upload=@/home/pi/Pictures/demo.jpg\" -F regions=ca-on -H \"Authorization: Token <Authorization PlateRecognizer Token>\"  https://api.platerecognizer.com/v1/plate-reader/",
+        "addpay": false,
+        "append": "",
+        "useSpawn": "false",
+        "timer": "",
+        "winHide": false,
+        "oldrc": false,
+        "name": "Open ALPR",
+        "x": 830,
+        "y": 280,
+        "wires": [
+            [
+                "1ffd9483.014b3b"
+            ],
+            [],
+            []
+        ]
+    },
+    {
+        "id": "1ffd9483.014b3b",
+        "type": "json",
+        "z": "620af8bdfa4fb220",
+        "name": "JSON",
+        "pretty": false,
+        "x": 981.5,
+        "y": 295.5,
+        "wires": [
+            [
+                "5f3c3d58.fd75e4",
+                "9753406b.6d08e"
+            ]
+        ]
+    },
+    {
+        "id": "9753406b.6d08e",
+        "type": "function",
+        "z": "620af8bdfa4fb220",
+        "name": "Identify Car",
+        "func": "var carPlate = \"<your Vehicle Number>\";\n\n//No car or car plate found in photo\nif(msg.payload.results.length === 0) {\n    msg.payload=0;\n    global.set(\"garageOpen\",\"1\");  \n}\n//If car plate match\nelse if(msg.payload.results[0].plate==carPlate) {\n    msg.payload=1;\n    global.set(\"garageOpen\",\"0\");  \n}\n//If car plate doesn't match\nelse {\n    msg.payload=0;   \n    global.set(\"garageOpen\",\"1\");  \n}\n\nreturn msg;\n\n",
+        "outputs": 1,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 391,
+        "y": 484.5,
+        "wires": [
+            [
+                "8b530f08.a5dbf"
+            ]
+        ]
+    },
+    {
+        "id": "3630c78a.035728",
+        "type": "camerapi-takephoto",
+        "z": "620af8bdfa4fb220",
+        "filemode": "1",
+        "filename": "demo.jpg",
+        "filedefpath": "0",
+        "filepath": "/home/pi/Pictures/",
+        "fileformat": "jpeg",
+        "resolution": "3",
+        "rotation": "0",
+        "fliph": "0",
+        "flipv": "0",
+        "brightness": "50",
+        "contrast": "0",
+        "sharpness": "0",
+        "quality": "",
+        "imageeffect": "none",
+        "agcwait": "",
+        "led": "1",
+        "name": "Take Photo",
+        "x": 664,
+        "y": 281,
+        "wires": [
+            [
+                "d2b7852a.b05618",
+                "e55bff3edf46a5f8"
+            ]
+        ]
+    },
+    {
+        "id": "8b530f08.a5dbf",
+        "type": "switch",
+        "z": "620af8bdfa4fb220",
+        "name": "",
+        "property": "payload",
+        "propertyType": "msg",
+        "rules": [
+            {
+                "t": "eq",
+                "v": "1",
+                "vt": "str"
+            },
+            {
+                "t": "eq",
+                "v": "0",
+                "vt": "str"
+            }
+        ],
+        "checkall": "true",
+        "outputs": 2,
+        "x": 531.5,
+        "y": 483,
+        "wires": [
+            [
+                "8fe08deb.7255e",
+                "1e160e5b18d6fe53"
+            ],
+            [
+                "343cb07a5837cf16"
+            ]
+        ]
+    },
+    {
+        "id": "5f3c3d58.fd75e4",
+        "type": "debug",
+        "z": "620af8bdfa4fb220",
+        "name": "",
+        "active": true,
+        "console": "false",
+        "complete": "false",
+        "x": 1130,
+        "y": 220,
+        "wires": []
+    },
+    {
+        "id": "73147f6a.0129e",
+        "type": "switch",
+        "z": "620af8bdfa4fb220",
+        "name": "",
+        "property": "payload",
+        "propertyType": "msg",
+        "rules": [
+            {
+                "t": "eq",
+                "v": "0",
+                "vt": "str"
+            },
+            {
+                "t": "eq",
+                "v": "1",
+                "vt": "str"
+            }
+        ],
+        "checkall": "true",
+        "outputs": 2,
+        "x": 517,
+        "y": 322,
+        "wires": [
+            [
+                "3630c78a.035728"
+            ],
+            [
+                "691d92c5.692d5c"
+            ]
+        ]
+    },
+    {
+        "id": "af21a185.21cd4",
+        "type": "function",
+        "z": "620af8bdfa4fb220",
+        "name": "Is Garage Open",
+        "func": "var garageOpen = global.get(\"garageOpen\"); \n\nif(garageOpen == \"1\"){\n    msg.payload = 1;\n}\nelse {\n    msg.payload = 0;\n}\n\nreturn msg;",
+        "outputs": 1,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 360.5,
+        "y": 322,
+        "wires": [
+            [
+                "73147f6a.0129e"
+            ]
+        ]
+    },
+    {
+        "id": "c2bbe2ac.f26ea",
+        "type": "rpi-gpio out",
+        "z": "620af8bdfa4fb220",
+        "name": "Garage Door",
+        "pin": "17",
+        "set": true,
+        "level": "0",
+        "freq": "",
+        "out": "out",
+        "bcm": true,
+        "x": 1130,
+        "y": 380,
+        "wires": []
+    },
+    {
+        "id": "8fe08deb.7255e",
+        "type": "delay",
+        "z": "620af8bdfa4fb220",
+        "name": "",
+        "pauseType": "delay",
+        "timeout": "10",
+        "timeoutUnits": "seconds",
+        "rate": "1",
+        "nbRateUnits": "1",
+        "rateUnits": "second",
+        "randomFirst": "1",
+        "randomLast": "5",
+        "randomUnits": "seconds",
+        "drop": false,
+        "outputs": 1,
+        "x": 709,
+        "y": 491,
+        "wires": [
+            [
+                "f2cc1ee4.e9841"
+            ]
+        ]
+    },
+    {
+        "id": "f2cc1ee4.e9841",
+        "type": "function",
+        "z": "620af8bdfa4fb220",
+        "name": "Close Garage",
+        "func": "msg.payload=0;   \nglobal.set(\"garageOpen\",\"1\"); \nreturn msg;\n\n",
+        "outputs": 1,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 869,
+        "y": 491,
+        "wires": [
+            [
+                "c2bbe2ac.f26ea"
+            ]
+        ]
+    },
+    {
+        "id": "691d92c5.692d5c",
+        "type": "debug",
+        "z": "620af8bdfa4fb220",
+        "name": "",
+        "active": true,
+        "console": "false",
+        "complete": "false",
+        "x": 657,
+        "y": 329,
+        "wires": []
+    },
+    {
+        "id": "491dea2b.a14d54",
+        "type": "debug",
+        "z": "620af8bdfa4fb220",
+        "name": "",
+        "active": true,
+        "console": "false",
+        "complete": "false",
+        "x": 930,
+        "y": 540,
+        "wires": []
+    },
+    {
+        "id": "e55bff3edf46a5f8",
+        "type": "exec",
+        "z": "620af8bdfa4fb220",
+        "command": "sudo cp /home/pi/Pictures/demo.jpg /home/pi/webserver/gpio/public/demo.jpg",
+        "addpay": "",
+        "append": "",
+        "useSpawn": "false",
+        "timer": "",
+        "winHide": false,
+        "oldrc": false,
+        "name": "copy For webserver",
+        "x": 870,
+        "y": 220,
+        "wires": [
+            [
+                "5f3c3d58.fd75e4"
+            ],
+            [],
+            []
+        ]
+    },
+    {
+        "id": "c7526c3782610dfa",
+        "type": "rpi-gpio in",
+        "z": "620af8bdfa4fb220",
+        "name": "Motion Sensor",
+        "pin": "12",
+        "intype": "tri",
+        "debounce": "25",
+        "read": false,
+        "bcm": true,
+        "x": 190,
+        "y": 320,
+        "wires": [
+            [
+                "af21a185.21cd4"
+            ]
+        ]
+    },
+    {
+        "id": "343cb07a5837cf16",
+        "type": "exec",
+        "z": "620af8bdfa4fb220",
+        "command": "sudo curl --request POST \\   --url 'https://platform.devtest.ringcentral.com/restapi/v1.0/account/~/extension/~/sms' \\   --header 'accept: application/json' \\   --header 'authorization: Bearer <Ringcentral Authorization Token>' \\   --header 'content-type: application/json' \\   --data '{\"from\":{\"phoneNumber\":\"<Provided Number from Ringcentral>\"},\"to\":[{\"phoneNumber\":\"<reciever Number>\"}],\"text\":\"<Your Formatted Text>\"}'",
+        "addpay": "",
+        "append": "",
+        "useSpawn": "false",
+        "timer": "",
+        "winHide": true,
+        "oldrc": false,
+        "name": "RingCentral",
+        "x": 750,
+        "y": 540,
+        "wires": [
+            [
+                "491dea2b.a14d54"
+            ],
+            [],
+            []
+        ]
+    },
+    {
+        "id": "1e160e5b18d6fe53",
+        "type": "exec",
+        "z": "620af8bdfa4fb220",
+        "command": "sudo curl --request POST \\   --url 'https://platform.devtest.ringcentral.com/restapi/v1.0/account/~/extension/~/sms' \\   --header 'accept: application/json' \\   --header 'authorization: Bearer <Ringcentral Authorization Token>' \\   --header 'content-type: application/json' \\   --data '{\"from\":{\"phoneNumber\":\"<Provided Number from Ringcentral>\"},\"to\":[{\"phoneNumber\":\"<reciever Number>\"}],\"text\":\"<Your Formatted Text>\"}'",
+        "addpay": "",
+        "append": "",
+        "useSpawn": "false",
+        "timer": "",
+        "winHide": true,
+        "oldrc": false,
+        "name": "RingCentral",
+        "x": 830,
+        "y": 420,
+        "wires": [
+            [
+                "c2bbe2ac.f26ea"
+            ],
+            [],
+            []
+        ]
+    }
+]
